@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -48,12 +49,13 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void my_Dma_TC_cb( DMA_HandleTypeDef *pHandle);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint8_t led_data[2] = {0x80, 0x00};
 /* USER CODE END 0 */
 
 /**
@@ -63,7 +65,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	uint32_t current_ticks=0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -84,8 +86,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_DMA_RegisterCallback(&hdma_memtomem_dma2_stream0,HAL_DMA_XFER_CPLT_CB_ID,&my_Dma_TC_cb);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -95,6 +98,17 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	HAL_DMA_Start_IT(&hdma_memtomem_dma2_stream0,(uint32_t)&led_data[0],(uint32_t) &GPIOB->ODR,1);
+
+	/*delay of 1 sec */
+	current_ticks = HAL_GetTick();
+	while( (current_ticks + 1000 ) >= HAL_GetTick() );
+
+	HAL_DMA_Start_IT(&hdma_memtomem_dma2_stream0,(uint32_t)&led_data[1],(uint32_t) &GPIOB->ODR,1);
+
+	/*delay of 1 sec */
+	current_ticks = HAL_GetTick();
+	while( (current_ticks + 1000 ) >= HAL_GetTick() );
   }
   /* USER CODE END 3 */
 }
@@ -153,7 +167,14 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void my_Dma_TC_cb( DMA_HandleTypeDef *pHandle)
+{
+	uint8_t volatile static status = 1;
 
+	status = !status;
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, status);
+
+}
 /* USER CODE END 4 */
 
 /**
