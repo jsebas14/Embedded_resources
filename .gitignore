@@ -53,3 +53,4 @@ venv/
 # === VSCode (optional) ===
 .vscode/
 /stm32/.metadata
+/STM32F767/DMA/.metadata/.plugins
